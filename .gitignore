@@ -42,6 +42,11 @@
 *.idb
 *.pdb
 
+
+*.sublime-workspace
+*.sw*
+*.un*
+
 # Kernel Module Compile Results
 *.mod*
 *.cmd
