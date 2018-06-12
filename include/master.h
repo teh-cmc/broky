@@ -25,23 +25,14 @@
 // -----------------------------------------------------------------------------
 
 typedef struct bk_master {
-    uint32_t         id;  // always -1 once initialized
-    struct sockaddr* addr;
-
-    uv_loop_t* loop;
-
-    uint32_t      nb_workers;
+    uint32_t     id;  // always -1 once initialized
+    uint32_t     nb_workers;
     bk_worker_t* _workers;
 } bk_master_t;
 
-// TODO(cmc): const stuff properly.
-
-int  bk_master_init(bk_master_t* master,
-                     const char*   laddr,
-                     uint16_t      port,
-                     uint32_t      nb_workers,
-                     bk_worker_t* workers);
+int  bk_master_init(bk_master_t* master, const uint32_t nb_workers);
 void bk_master_fini(bk_master_t* master);
 
-int  bk_master_run(bk_master_t* master, uint32_t backlog);
-void bk_master_stop(bk_master_t* master);
+int bk_master_run(bk_master_t*           master,
+                  const struct sockaddr* laddr,
+                  const uint32_t         backlog_size);

@@ -23,62 +23,34 @@
 #include "log.h"
 #include "macros.h"
 #include "master.h"
-#include "worker.h"
 
 #include "libuv/include/uv.h"
 
 // -----------------------------------------------------------------------------
 
-static volatile bool _shutdown = false;
-static uv_cond_t _shutdown_cond;   // never destroyed
-static uv_mutex_t _shutdown_lock;  // never destroyed
-
-static void _sigint_handler(int sig) {
-    (void)sig;
-
-    log_info("caught SIGINT");
-
-    uv_mutex_lock(&_shutdown_lock);
-    _shutdown = true;
-    uv_cond_signal(&_shutdown_cond);
-    uv_mutex_unlock(&_shutdown_lock);
-}
-
-static void _sigint_watch(void* master) {
-    master = (bk_master_t*)master;
-
-    BK_ASSERT(uv_cond_init(&_shutdown_cond));
-    BK_ASSERT(uv_mutex_init(&_shutdown_lock));
-
-    bool shutdown = false;
-    for (;;) {
-        uv_mutex_lock(&_shutdown_lock);
-        uv_cond_wait(&_shutdown_cond, &_shutdown_lock);
-        shutdown = _shutdown;
-        uv_mutex_unlock(&_shutdown_lock);
-
-        if (shutdown) {
-            log_info("shutting down");
-            bk_master_stop(master);
-            return;
-        }
-    }
-}
-
-// -----------------------------------------------------------------------------
-
-int main() {
+int
+main() {
     uint32_t nb_cpus = sysconf(_SC_NPROCESSORS_ONLN);
-    log_info("cpus: %d", nb_cpus);
+    log_info("detected %u CPU cores", nb_cpus);
 
-    uint32_t nb_workers = nb_cpus - 1;
-    bk_worker_t* workers = calloc(sizeof(bk_worker_t), nb_workers);
-    for (uint32_t i = 0; i < nb_workers; i++) {
-        BK_ASSERT(bk_worker_init(workers + i, i + 1));
-    }
+    uint32_t nb_workers = nb_cpus < 2 ? 1 : nb_cpus - 1;
+    log_info("booting 1 master + %u worker(s)", nb_workers);
+
+    // TODO(cmc): IPv6 support
+    // TODO(cmc): argv
+    struct sockaddr_in* addr = calloc(sizeof(struct sockaddr_in), 1);
+    assert(addr);
+    BK_ASSERT(uv_ip4_addr("0.0.0.0", 7070, addr));
 
     bk_master_t* master = calloc(sizeof(bk_master_t), 1);
-    BK_ASSERT(bk_master_init(master, "0.0.0.0", 7070, nb_workers, workers));
+    BK_ASSERT(bk_master_init(master, nb_workers));
+
+    // TODO(cmc): argv
+    BK_LOGERR(bk_master_run(master, (const struct sockaddr*)addr, 42));
+    free(addr);
+
+    bk_master_fini(master);
+    free(master);
 
     /* uv_thread_t* tids[nb_cpus]; */
     /* for (uintptr_t i = 0; i < nb_cpus; i++) { */
@@ -90,25 +62,6 @@ int main() {
     /* for (uint32_t i = 0; i < nb_cpus; i++) { */
     /*     BK_ASSERT(uv_thread_join(tids[i])); */
     /* } */
-
-    uv_thread_t tid;
-    BK_ASSERT(uv_thread_create(&tid, _sigint_watch, (void*)master));
-
-    struct sigaction sigact;
-    memset(&sigact, 0, sizeof(sigact));
-    sigact.sa_handler = _sigint_handler;
-    sigaction(SIGINT, &sigact, NULL);
-
-    BK_ASSERT(bk_master_run(master, 42));
-
-    for (uint32_t i = 0; i < nb_workers; i++) {
-        bk_worker_t* worker = workers + i;
-        bk_worker_fini(worker);
-        free(worker);
-    }
-
-    bk_master_fini(master);
-    free(master);
 
     return 0;
 }
