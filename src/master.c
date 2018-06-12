@@ -31,7 +31,7 @@
 // -----------------------------------------------------------------------------
 
 int
-bk_master_init(bk_master_t* master, uint32_t nb_workers) {
+bk_master_init(bk_master_t* master, const uint32_t nb_workers) {
     assert(master->id == 0);  // already initiliazed?
     master->id = -1;
 
@@ -69,6 +69,11 @@ _bk_master_signal_cb(uv_signal_t* handle, int signum) {
 }
 
 void
+_bk_client_close_cb(uv_handle_t* client) {
+    free(client);
+}
+
+void
 _bk_master_listen_cb(uv_stream_t* server, int err) {
     BK_ASSERT(err);  // TODO(cmc)
 
@@ -80,7 +85,7 @@ _bk_master_listen_cb(uv_stream_t* server, int err) {
     BK_ASSERT(uv_tcp_init(loop, client));
 
     if (uv_accept(server, (uv_stream_t*)client) == 0) {
-        uv_close((uv_handle_t*)client, NULL);  // frees the client!
+        uv_close((uv_handle_t*)client, _bk_client_close_cb);
     }
 }
 
@@ -88,7 +93,7 @@ _bk_master_listen_cb(uv_stream_t* server, int err) {
 int
 bk_master_run(bk_master_t*           master,
               const struct sockaddr* laddr,
-              uint32_t               backlog_size) {
+              const uint32_t         backlog_size) {
     (void)master;
 
     uv_loop_t loop;
@@ -111,9 +116,19 @@ bk_master_run(bk_master_t*           master,
     log_info("master server now running on %s", ip);
 
     int err = uv_run(&loop, UV_RUN_DEFAULT);
-    log_info("master server shut down (%s)", uv_err_name(err));
+    log_info("master server shutting down...");
 
-    /* uv_close((uv_handle_t*)&listener, NULL); */
+    // 1. stop accepting signals
+    uv_close((uv_handle_t*)&sighandler, NULL);
+    // 2. stop accepting connection
+    uv_close((uv_handle_t*)&listener, NULL);
+    // 3. wait for existing streams to end
+    do {
+        // TODO(cmc): timer / hard deadline
+        err = uv_run(&loop, UV_RUN_DEFAULT);
+    } while (err);
+    log_info("master server shutdown complete");
+
     /* uv_close((uv_handle_t*)&sighandler, NULL); */
     /* BK_LOGERR(uv_close(&sighandler, NULL)); */
     BK_LOGERR(uv_loop_close(&loop));
