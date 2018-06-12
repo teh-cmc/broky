@@ -52,16 +52,5 @@ main() {
     bk_master_fini(master);
     free(master);
 
-    /* uv_thread_t* tids[nb_cpus]; */
-    /* for (uintptr_t i = 0; i < nb_cpus; i++) { */
-    /*     uv_thread_t tid; */
-    /*     BK_ASSERT(uv_thread_create(&tid, new_server, (void*)_servers[i])) */
-    /*     tids[i] = &tid; */
-    /* } */
-
-    /* for (uint32_t i = 0; i < nb_cpus; i++) { */
-    /*     BK_ASSERT(uv_thread_join(tids[i])); */
-    /* } */
-
     return 0;
 }

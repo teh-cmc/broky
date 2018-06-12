@@ -21,9 +21,11 @@
 // -----------------------------------------------------------------------------
 
 typedef struct bk_worker {
-    uint32_t   id;
-    uv_loop_t* loop;
+    uint32_t    id;
+    uv_thread_t tid;
 } bk_worker_t;
 
 int  bk_worker_init(bk_worker_t* worker, uint32_t id);
 void bk_worker_fini(bk_worker_t* worker);
+
+void bk_worker_run(void* worker);

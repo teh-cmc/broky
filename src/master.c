@@ -59,7 +59,7 @@ bk_master_fini(bk_master_t* master) {
 
 // -----------------------------------------------------------------------------
 
-void
+static void
 _bk_master_signal_cb(uv_signal_t* handle, int signum) {
     (void)handle;
     (void)signum;
@@ -68,12 +68,12 @@ _bk_master_signal_cb(uv_signal_t* handle, int signum) {
     uv_stop(handle->loop);
 }
 
-void
+static void
 _bk_client_close_cb(uv_handle_t* client) {
     free(client);
 }
 
-void
+static void
 _bk_master_listen_cb(uv_stream_t* server, int err) {
     BK_ASSERT(err);  // TODO(cmc)
 
@@ -89,12 +89,31 @@ _bk_master_listen_cb(uv_stream_t* server, int err) {
     }
 }
 
-// TODO(cmc): real graceful shutdown
+// -----------------------------------------------------------------------------
+
+static int
+_bk_master_start_workers(bk_master_t* master) {
+    for (uint32_t i = 0; i < master->nb_workers; i++) {
+        bk_worker_t* worker = master->_workers + i;
+        BK_RETERR(uv_thread_create(&worker->tid, bk_worker_run, (void*)worker));
+    }
+    return 0;
+}
+
+static int
+_bk_master_stop_workers(bk_master_t* master) {
+    for (uint32_t i = 0; i < master->nb_workers; i++) {
+        bk_worker_t* worker = master->_workers + i;
+        BK_RETERR(uv_thread_join(&worker->tid));
+    }
+    return 0;
+}
+
 int
 bk_master_run(bk_master_t*           master,
               const struct sockaddr* laddr,
               const uint32_t         backlog_size) {
-    (void)master;
+    BK_RETERR(_bk_master_start_workers(master));
 
     uv_loop_t loop;
     BK_RETERR(uv_loop_init(&loop));
@@ -127,11 +146,11 @@ bk_master_run(bk_master_t*           master,
         // TODO(cmc): timer / hard deadline
         err = uv_run(&loop, UV_RUN_DEFAULT);
     } while (err);
+
+    BK_LOGERR(uv_loop_close(&loop));
     log_info("master server shutdown complete");
 
-    /* uv_close((uv_handle_t*)&sighandler, NULL); */
-    /* BK_LOGERR(uv_close(&sighandler, NULL)); */
-    BK_LOGERR(uv_loop_close(&loop));
+    BK_RETERR(_bk_master_stop_workers(master));
 
-    return err;
+    return 0;
 }
