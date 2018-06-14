@@ -21,5 +21,5 @@
 typedef struct uv_write_s  uv_write_t;
 typedef struct uv_handle_s uv_handle_t;
 
-void bk_client_write_cb(uv_write_t* req, int status);
-void bk_client_close_cb(uv_handle_t* client);
+void bk_stream_write_cb(uv_write_t* req, int status);
+void bk_stream_close_cb(uv_handle_t* client);

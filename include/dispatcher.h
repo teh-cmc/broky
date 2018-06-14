@@ -38,8 +38,5 @@ void bk_dispatcher_init(bk_dispatcher_t* dispatcher,
                         bk_worker_t*     workers);
 void bk_dispatcher_fini(bk_dispatcher_t* dispatcher);
 
-void bk_dispatcher_read_cb(uv_stream_t*    stream,
-                           ssize_t         nread,
-                           const uv_buf_t* buf);
-
 void bk_dispatcher_run(void* dispatcher_ptr);
+int  bk_dispatcher_handoff(bk_dispatcher_t* dispatcher, uv_os_fd_t client_fd);

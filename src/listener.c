@@ -19,12 +19,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "client.h"
 #include "dispatcher.h"
 #include "listener.h"
 #include "log.h"
 #include "macros.h"
 #include "memory.h"
+#include "stream.h"
 
 #include "libuv/include/uv.h"
 
@@ -67,31 +67,12 @@ _bk_listener_handoff_client(bk_listener_t* listener, uv_tcp_t* client) {
     if (++listener->_cur_dispatcher >= listener->_nb_dispatchers) {
         listener->_cur_dispatcher = 0;
     }
-
     bk_dispatcher_t* dispatcher = listener->_dispatchers + cur_dispatcher;
 
     uv_os_fd_t client_fd;
     BK_RETERR(uv_fileno((uv_handle_t*)client, &client_fd));
-
-    uv_tcp_t* client2 = (uv_tcp_t*)calloc(sizeof(*client2), 1);
-    assert(client2);
-    client2->data = dispatcher;
-    BK_RETERR(uv_tcp_init(dispatcher->_loop, client2));
-    BK_RETERR(uv_tcp_nodelay(client2, 1));
-    uv_os_fd_t client2_fd = dup(client_fd);
-    BK_RETERR(uv_tcp_open(client2, client2_fd));
-
-    char* ann = "you're being moved over to dispatcher #%u\n";
-    char* msg = calloc(sizeof(*msg), strlen(ann) + 16);
-    BK_ASSERT(sprintf(msg, ann, dispatcher->_id));
-
-    uv_buf_t    buf[] = {{.base = msg, .len = strlen(msg)}};
-    uv_write_t* req = calloc(sizeof(*req), 1);
-    assert(req);
-    BK_ASSERT(uv_write(req, (uv_stream_t*)client, buf, 1, bk_client_write_cb));
-
-    BK_ASSERT(uv_read_start(
-        (uv_stream_t*)client2, bk_dumb_alloc_cb, bk_dispatcher_read_cb));
+    client_fd = dup(client_fd);
+    BK_RETERR(bk_dispatcher_handoff(dispatcher, client_fd));
 
     return 0;
 }
@@ -111,7 +92,7 @@ _bk_listener_listen_cb(uv_stream_t* server, int err) {
 
         BK_ASSERT(_bk_listener_handoff_client(server->data, client));
 
-        uv_close((uv_handle_t*)client, bk_client_close_cb);
+        uv_close((uv_handle_t*)client, bk_stream_close_cb);
     }
 }
 

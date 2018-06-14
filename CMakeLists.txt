@@ -9,7 +9,7 @@ set(PROJECT_SOURCES
     src/listener.c
     src/dispatcher.c
     src/worker.c
-    src/client.c
+    src/stream.c
     src/memory.c
     src/log.c
 )

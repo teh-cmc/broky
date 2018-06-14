@@ -21,12 +21,12 @@
 // -----------------------------------------------------------------------------
 
 void
-bk_client_write_cb(uv_write_t* req, int status) {
+bk_stream_write_cb(uv_write_t* req, int status) {
     BK_LOGERR(status);
     free(req);
 }
 
 void
-bk_client_close_cb(uv_handle_t* client) {
+bk_stream_close_cb(uv_handle_t* client) {
     free(client);
 }
