@@ -37,7 +37,7 @@ main() {
 
     const uint32_t nb_listeners = 1;
     const uint32_t nb_cpus_avail = bk_max(nb_cpus - nb_listeners, 1);
-    const uint32_t nb_dispatchers = bk_max(nb_cpus_avail / 4, 1);
+    const uint32_t nb_dispatchers = bk_max(nb_cpus_avail / 3, 1);
     const uint32_t nb_workers = bk_max(nb_cpus_avail - nb_dispatchers, 1);
 
     bk_worker_t* workers;
