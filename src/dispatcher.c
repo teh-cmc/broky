@@ -59,10 +59,11 @@ _bk_dispatcher_announce(bk_dispatcher_t* dispatcher,
     char* msg = calloc(sizeof(*msg), message_len + 32);
     BK_RETERR(sprintf(msg, "dispatcher #%u: %s", dispatcher->_id, message));
 
-    uv_buf_t    buf2[] = {{.base = msg, .len = strlen(msg)}};
+    uv_buf_t    buf[] = {{.base = msg, .len = strlen(msg)}};
     uv_write_t* req = calloc(sizeof(*req), 1);
     assert(req);
-    BK_RETERR(uv_write(req, stream, buf2, 1, bk_stream_write_cb));
+    BK_RETERR(uv_write(req, stream, buf, 1, bk_stream_write_cb));
+    free(msg);
 
     return 0;
 }
@@ -72,19 +73,16 @@ _bk_dispatcher_read_cb(uv_stream_t*    stream,
                        ssize_t         nread,
                        const uv_buf_t* buf) {
     if (nread < 0) {
-        if (nread == UV_EOF) {
-            BK_ASSERT(uv_read_stop(stream));
-            return;
-        }
-        BK_LOGERR(nread);
+        free(buf->base);
         uv_close((uv_handle_t*)stream, bk_stream_close_cb);
+        if (nread == UV_EOF) return;
+        BK_LOGERR(nread);
     }
 
     assert(buf->base);
     assert(buf->len);
 
     bk_dispatcher_t* dispatcher = stream->data;
-
     BK_ASSERT(_bk_dispatcher_announce(dispatcher, stream, buf->base, buf->len));
     free(buf->base);
 }
@@ -102,16 +100,18 @@ bk_dispatcher_run(void* dispatcher_ptr) {
     uv_timer_t timer;
     BK_ASSERT(uv_timer_init(&loop, &timer));
     BK_ASSERT(uv_timer_start(&timer, _bk_dispatcher_timer_cb, 1000, 1000));
+    dispatcher->_keep_alive = &timer;
 
     dispatcher->_loop = &loop;
     int err = uv_run(&loop, UV_RUN_DEFAULT);
     dispatcher->_loop = NULL;  // racy
     log_info("dispatcher %u shutting down...", dispatcher->_id);
 
-    // wait for existing streams to end
+    // wait for active streams to end
     do {
         err = uv_run(&loop, UV_RUN_DEFAULT);
     } while (err);
+
     log_info("dispatcher %u shutdown complete", dispatcher->_id);
 
     BK_LOGERR(uv_loop_close(&loop));
@@ -129,14 +129,29 @@ bk_dispatcher_handoff(bk_dispatcher_t* dispatcher, uv_os_fd_t client_fd) {
     char* ann = "you're being moved over to dispatcher #%u\n";
     char* msg = calloc(sizeof(*msg), strlen(ann) + 16);
     BK_RETERR(sprintf(msg, ann, dispatcher->_id));
-
-    uv_buf_t    buf[] = {{.base = msg, .len = strlen(msg)}};
-    uv_write_t* req = calloc(sizeof(*req), 1);
-    assert(req);
-    BK_RETERR(uv_write(req, (uv_stream_t*)client, buf, 1, bk_stream_write_cb));
+    BK_RETERR(_bk_dispatcher_announce(
+        dispatcher, (uv_stream_t*)client, msg, strlen(msg)));
+    free(msg);
 
     BK_RETERR(uv_read_start(
         (uv_stream_t*)client, bk_dumb_alloc_cb, _bk_dispatcher_read_cb));
 
     return 0;
+}
+
+// -----------------------------------------------------------------------------
+
+static void
+_bk_dispatcher_stop_cb(uv_async_t* async) {
+    bk_dispatcher_t* dispatcher = async->data;
+    uv_close((uv_handle_t*)dispatcher->_keep_alive, NULL);
+    uv_close((uv_handle_t*)async, bk_stream_close_cb);
+}
+
+void
+bk_dispatcher_stop(bk_dispatcher_t* dispatcher) {
+    uv_async_t* async = calloc(sizeof(*async), 1);
+    async->data = dispatcher;
+    BK_ASSERT(uv_async_init(dispatcher->_loop, async, _bk_dispatcher_stop_cb));
+    BK_ASSERT(uv_async_send(async));
 }

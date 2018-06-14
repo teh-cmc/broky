@@ -140,4 +140,8 @@ bk_listener_run(void* listener_ptr) {
 
     BK_LOGERR(uv_loop_close(&loop));
     log_info("listener server shutdown complete");
+
+    for (uint32_t i = 0; i < listener->_nb_dispatchers; i++) {
+        bk_dispatcher_stop(listener->_dispatchers + i);
+    }
 }

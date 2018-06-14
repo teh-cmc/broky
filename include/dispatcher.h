@@ -29,7 +29,8 @@ typedef struct bk_dispatcher_s {
     uint32_t     _nb_workers;
     bk_worker_t* _workers;
 
-    uv_loop_t* _loop;
+    uv_loop_t*  _loop;
+    uv_timer_t* _keep_alive;
 } bk_dispatcher_t;
 
 void bk_dispatcher_init(bk_dispatcher_t* dispatcher,
@@ -40,3 +41,4 @@ void bk_dispatcher_fini(bk_dispatcher_t* dispatcher);
 
 void bk_dispatcher_run(void* dispatcher_ptr);
 int  bk_dispatcher_handoff(bk_dispatcher_t* dispatcher, uv_os_fd_t client_fd);
+void bk_dispatcher_stop(bk_dispatcher_t* dispatcher);

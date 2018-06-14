@@ -24,7 +24,7 @@ void
 bk_dumb_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     (void)handle;
 
-    buf->base = calloc(suggested_size, 1);
+    buf->base = calloc(4 * 1024, 1);
     assert(buf->base);
-    buf->len = suggested_size;
+    buf->len = 4 * 1024;
 }
