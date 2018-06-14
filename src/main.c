@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "dispatcher.h"
 #include "listener.h"
@@ -30,9 +29,20 @@
 
 // -----------------------------------------------------------------------------
 
+uint32_t
+get_nb_cpus() {
+    uv_cpu_info_t* info;
+    int            nb_cpus;
+
+    uv_cpu_info(&info, &nb_cpus);
+    uv_free_cpu_info(info, nb_cpus);
+
+    return nb_cpus;
+}
+
 int
 main() {
-    uint32_t nb_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    uint32_t nb_cpus = get_nb_cpus();
     log_info("detected %u CPU cores", nb_cpus);
 
     const uint32_t nb_listeners = 1;
