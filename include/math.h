@@ -25,7 +25,7 @@ BK_MAX(uint32_t)
 
 // clang-format off
 #define bk_max(a, b)                    \
-    _Generic((a),                       \
+    _Generic((a) + (b),                 \
         uint32_t: bk_max_uint32_t(a, b) \
     )
 // clang-format on
