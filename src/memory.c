@@ -12,34 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
+#include <assert.h>
 #include <stdint.h>
-
-#include "worker.h"
+#include <stdlib.h>
 
 #include "libuv/include/uv.h"
 
 // -----------------------------------------------------------------------------
 
-// _ denotes read-only members (from an external standpoint).
-typedef struct bk_dispatcher_s {
-    uint32_t _id;
+void
+bk_dumb_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+    (void)handle;
 
-    uint32_t     _nb_workers;
-    bk_worker_t* _workers;
-
-    uv_loop_t* _loop;
-} bk_dispatcher_t;
-
-void bk_dispatcher_init(bk_dispatcher_t* dispatcher,
-                        uint32_t         id,
-                        uint32_t         nb_workers,
-                        bk_worker_t*     workers);
-void bk_dispatcher_fini(bk_dispatcher_t* dispatcher);
-
-void bk_dispatcher_read_cb(uv_stream_t*    stream,
-                           ssize_t         nread,
-                           const uv_buf_t* buf);
-
-void bk_dispatcher_run(void* dispatcher_ptr);
+    buf->base = calloc(suggested_size, 1);
+    assert(buf->base);
+    buf->len = suggested_size;
+}

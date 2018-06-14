@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "client.h"
 #include "dispatcher.h"
 #include "macros.h"
 
@@ -42,16 +43,46 @@ bk_dispatcher_fini(bk_dispatcher_t* dispatcher) {
     memset(dispatcher, 0, sizeof(*dispatcher));
 }
 
-void
+// -----------------------------------------------------------------------------
+
+static void
 _bk_dispatcher_timer_cb(uv_timer_t* timer) {
     (void)timer;
 }
 
+void
+bk_dispatcher_read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+    if (nread < 0) {
+        if (nread == UV_EOF) {
+            BK_ASSERT(uv_read_stop(stream));
+            return;
+        }
+        BK_LOGERR(nread);
+        uv_close((uv_handle_t*)stream, bk_client_close_cb);
+    }
+
+    assert(buf->base);
+    assert(buf->len);
+
+    bk_dispatcher_t* dispatcher = stream->data;
+
+    char* msg = calloc(sizeof(*msg), buf->len + 32);
+    BK_ASSERT(sprintf(msg,
+                      "dispatcher #%u: %.*s",
+                      dispatcher->_id,
+                      (int)buf->len,
+                      buf->base));
+    free(buf->base);
+
+    uv_buf_t    buf2[] = {{.base = msg, .len = strlen(msg)}};
+    uv_write_t* req = calloc(sizeof(*req), 1);
+    assert(req);
+    BK_ASSERT(uv_write(req, stream, buf2, 1, bk_client_write_cb));
+}
+
 // -----------------------------------------------------------------------------
 
-// NOTE(cmc): Always run as a thread.
-// TODO(cmc): remove assertions and forward errors to
-// listener
+// TODO(cmc): remove assertions and forward errors to listener
 void
 bk_dispatcher_run(void* dispatcher_ptr) {
     bk_dispatcher_t* dispatcher = dispatcher_ptr;

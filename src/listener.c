@@ -19,10 +19,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "client.h"
 #include "dispatcher.h"
 #include "listener.h"
 #include "log.h"
 #include "macros.h"
+#include "memory.h"
 
 #include "libuv/include/uv.h"
 
@@ -59,17 +61,6 @@ _bk_listener_signal_cb(uv_signal_t* handle, int signum) {
     uv_stop(handle->loop);
 }
 
-static void
-_bk_client_write_cb(uv_write_t* req, int status) {
-    BK_LOGERR(status);
-    free(req);
-}
-
-static void
-_bk_client_dup_forward_close_cb(uv_handle_t* client) {
-    free(client);
-}
-
 static int
 _bk_listener_handoff_client(bk_listener_t* listener, uv_tcp_t* client) {
     uint32_t cur_dispatcher = listener->_cur_dispatcher;
@@ -84,6 +75,7 @@ _bk_listener_handoff_client(bk_listener_t* listener, uv_tcp_t* client) {
 
     uv_tcp_t* client2 = (uv_tcp_t*)calloc(sizeof(*client2), 1);
     assert(client2);
+    client2->data = dispatcher;
     BK_RETERR(uv_tcp_init(dispatcher->_loop, client2));
     BK_RETERR(uv_tcp_nodelay(client2, 1));
     uv_os_fd_t client2_fd = dup(client_fd);
@@ -91,13 +83,15 @@ _bk_listener_handoff_client(bk_listener_t* listener, uv_tcp_t* client) {
 
     char* ann = "you're being moved over to dispatcher #%u\n";
     char* msg = calloc(sizeof(*msg), strlen(ann) + 16);
-    BK_ASSERT(sprintf(msg, ann, cur_dispatcher));
-    uv_buf_t buf[] = {
-        {.base = msg, .len = strlen(msg)},
-    };
+    BK_ASSERT(sprintf(msg, ann, dispatcher->_id));
+
+    uv_buf_t    buf[] = {{.base = msg, .len = strlen(msg)}};
     uv_write_t* req = calloc(sizeof(*req), 1);
     assert(req);
-    BK_ASSERT(uv_write(req, (uv_stream_t*)client, buf, 1, _bk_client_write_cb));
+    BK_ASSERT(uv_write(req, (uv_stream_t*)client, buf, 1, bk_client_write_cb));
+
+    BK_ASSERT(uv_read_start(
+        (uv_stream_t*)client2, bk_dumb_alloc_cb, bk_dispatcher_read_cb));
 
     return 0;
 }
@@ -117,7 +111,7 @@ _bk_listener_listen_cb(uv_stream_t* server, int err) {
 
         BK_ASSERT(_bk_listener_handoff_client(server->data, client));
 
-        uv_close((uv_handle_t*)client, _bk_client_dup_forward_close_cb);
+        uv_close((uv_handle_t*)client, bk_client_close_cb);
     }
 }
 
