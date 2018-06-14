@@ -40,6 +40,7 @@ get_nb_cpus() {
     return nb_cpus;
 }
 
+// TODO(cmc): thread affinity
 int
 main() {
     uint32_t nb_cpus = get_nb_cpus();
@@ -59,11 +60,13 @@ main() {
         assert(workers);
         for (uint32_t i = 0; i < nb_workers; i++) {
             bk_worker_t* worker = workers + i;
-            bk_worker_init(worker, i);
+            bk_worker_init(worker, i + 1);
             BK_ASSERT(uv_thread_create(
                 worker_tids + i, bk_worker_run, (void*)worker));
         }
     }
+
+    // TODO(cmc): workers need to be fully ready by this point
 
     bk_dispatcher_t* dispatchers;
     uv_thread_t      dispatcher_tids[nb_dispatchers];
@@ -74,11 +77,13 @@ main() {
         assert(dispatchers);
         for (uint32_t i = 0; i < nb_dispatchers; i++) {
             bk_dispatcher_t* dispatcher = dispatchers + i;
-            bk_dispatcher_init(dispatcher, i, workers);
+            bk_dispatcher_init(dispatcher, i + 1, nb_workers, workers);
             BK_ASSERT(uv_thread_create(
                 dispatcher_tids + i, bk_dispatcher_run, (void*)dispatcher));
         }
     }
+
+    // TODO(cmc): dispatchers need to be fully ready by this point
 
     bk_listener_t* listener;
     uv_thread_t    listener_tid;
@@ -93,7 +98,8 @@ main() {
 
         listener = calloc(sizeof(*listener), 1);
         assert(listener);
-        bk_listener_init(listener, (sockaddr_t*)laddr, 42, dispatchers);
+        bk_listener_init(
+            listener, (sockaddr_t*)laddr, 42, nb_dispatchers, dispatchers);
 
         BK_ASSERT(
             uv_thread_create(&listener_tid, bk_listener_run, (void*)listener));

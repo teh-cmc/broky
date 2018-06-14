@@ -18,8 +18,9 @@
 
 // -----------------------------------------------------------------------------
 
+// _ denotes read-only members (from an external standpoint).
 typedef struct bk_worker_s {
-    uint32_t id;
+    uint32_t _id;
 } bk_worker_t;
 
 void bk_worker_init(bk_worker_t* worker, uint32_t id);

@@ -24,7 +24,7 @@
 
 void
 bk_worker_init(bk_worker_t* worker, uint32_t id) {
-    worker->id = id;
+    worker->_id = id;
 }
 
 void

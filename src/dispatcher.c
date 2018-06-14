@@ -27,10 +27,13 @@
 // -----------------------------------------------------------------------------
 
 void
-bk_dispatcher_init(bk_dispatcher_t*   dispatcher,
-                   uint32_t           id,
-                   const bk_worker_t* workers) {
-    dispatcher->id = id;
+bk_dispatcher_init(bk_dispatcher_t* dispatcher,
+                   uint32_t         id,
+                   uint32_t         nb_workers,
+                   bk_worker_t*     workers) {
+    dispatcher->_id = id;
+
+    dispatcher->_nb_workers = nb_workers;
     dispatcher->_workers = workers;
 }
 
@@ -39,28 +42,37 @@ bk_dispatcher_fini(bk_dispatcher_t* dispatcher) {
     memset(dispatcher, 0, sizeof(*dispatcher));
 }
 
+void
+_bk_dispatcher_timer_cb(uv_timer_t* timer) {
+    (void)timer;
+}
+
 // -----------------------------------------------------------------------------
 
 // NOTE(cmc): Always run as a thread.
-// TODO(cmc): remove assertions and forward errors to listener
+// TODO(cmc): remove assertions and forward errors to
+// listener
 void
 bk_dispatcher_run(void* dispatcher_ptr) {
     bk_dispatcher_t* dispatcher = dispatcher_ptr;
-    (void)dispatcher;
 
-#ifdef false
     uv_loop_t loop;
     BK_ASSERT(uv_loop_init(&loop));
 
+    uv_timer_t timer;
+    BK_ASSERT(uv_timer_init(&loop, &timer));
+    BK_ASSERT(uv_timer_start(&timer, _bk_dispatcher_timer_cb, 1000, 1000));
+
+    dispatcher->_loop = &loop;
     int err = uv_run(&loop, UV_RUN_DEFAULT);
-    log_info("dispatcher %d shutting down...", dispatcher->id);
+    dispatcher->_loop = NULL;  // racy
+    log_info("dispatcher %u shutting down...", dispatcher->_id);
 
     // wait for existing streams to end
     do {
         err = uv_run(&loop, UV_RUN_DEFAULT);
     } while (err);
-    log_info("dispatcher %d shutdown complete");
+    log_info("dispatcher %u shutdown complete", dispatcher->_id);
 
     BK_LOGERR(uv_loop_close(&loop));
-#endif
 }

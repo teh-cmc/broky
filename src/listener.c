@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include <assert.h>
-#include <netinet/in.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,19 +29,21 @@
 // -----------------------------------------------------------------------------
 
 void
-bk_listener_init(bk_listener_t*         listener,
-                 sockaddr_t*            laddr,
-                 uint32_t               backlog_size,
-                 const bk_dispatcher_t* dispatchers) {
-    listener->laddr = laddr;
-    listener->backlog_size = backlog_size;
+bk_listener_init(bk_listener_t*   listener,
+                 sockaddr_t*      laddr,
+                 uint32_t         backlog_size,
+                 const uint32_t   nb_dispatchers,
+                 bk_dispatcher_t* dispatchers) {
+    listener->_laddr = laddr;
+    listener->_backlog_size = backlog_size;
 
+    listener->_nb_dispatchers = nb_dispatchers;
     listener->_dispatchers = dispatchers;
 }
 
 void
 bk_listener_fini(bk_listener_t* listener) {
-    free(listener->laddr);
+    free(listener->_laddr);
 
     memset(listener, 0, sizeof(*listener));
 }
@@ -60,23 +60,64 @@ _bk_listener_signal_cb(uv_signal_t* handle, int signum) {
 }
 
 static void
-_bk_client_close_cb(uv_handle_t* client) {
+_bk_client_write_cb(uv_write_t* req, int status) {
+    BK_LOGERR(status);
+    free(req);
+}
+
+static void
+_bk_client_dup_forward_close_cb(uv_handle_t* client) {
     free(client);
 }
 
+static int
+_bk_listener_handoff_client(bk_listener_t* listener, uv_tcp_t* client) {
+    uint32_t cur_dispatcher = listener->_cur_dispatcher;
+    if (++listener->_cur_dispatcher >= listener->_nb_dispatchers) {
+        listener->_cur_dispatcher = 0;
+    }
+
+    bk_dispatcher_t* dispatcher = listener->_dispatchers + cur_dispatcher;
+
+    uv_os_fd_t client_fd;
+    BK_RETERR(uv_fileno((uv_handle_t*)client, &client_fd));
+
+    uv_tcp_t* client2 = (uv_tcp_t*)calloc(sizeof(*client2), 1);
+    assert(client2);
+    BK_RETERR(uv_tcp_init(dispatcher->_loop, client2));
+    BK_RETERR(uv_tcp_nodelay(client2, 1));
+    uv_os_fd_t client2_fd = dup(client_fd);
+    BK_RETERR(uv_tcp_open(client2, client2_fd));
+
+    char* ann = "you're being moved over to dispatcher #%u\n";
+    char* msg = calloc(sizeof(*msg), strlen(ann) + 16);
+    BK_ASSERT(sprintf(msg, ann, cur_dispatcher));
+    uv_buf_t buf[] = {
+        {.base = msg, .len = strlen(msg)},
+    };
+    uv_write_t* req = calloc(sizeof(*req), 1);
+    assert(req);
+    BK_ASSERT(uv_write(req, (uv_stream_t*)client, buf, 1, _bk_client_write_cb));
+
+    return 0;
+}
+
+// TODO(cmc): no asserts
 static void
 _bk_listener_listen_cb(uv_stream_t* server, int err) {
     BK_ASSERT(err);  // TODO(cmc)
 
-    log_info("new conn!");
-
-    uv_loop_t* loop = ((uv_tcp_t*)server)->loop;
-
-    uv_tcp_t* client = (uv_tcp_t*)calloc(sizeof(uv_tcp_t), 1);
-    BK_ASSERT(uv_tcp_init(loop, client));
+    uv_tcp_t* client = (uv_tcp_t*)calloc(sizeof(*client), 1);
+    assert(client);
+    BK_ASSERT(uv_tcp_init(server->loop, client));
+    BK_ASSERT(uv_tcp_nodelay(client, 1));
 
     if (uv_accept(server, (uv_stream_t*)client) == 0) {
-        uv_close((uv_handle_t*)client, _bk_client_close_cb);
+        log_info("accepted new client!");
+
+        BK_ASSERT(_bk_listener_handoff_client(server->data, client));
+
+        uv_close((uv_handle_t*)client, _bk_client_dup_forward_close_cb);
     }
 }
 
@@ -96,16 +137,17 @@ bk_listener_run(void* listener_ptr) {
     BK_ASSERT(
         uv_signal_start_oneshot(&sighandler, _bk_listener_signal_cb, SIGINT));
 
-    uv_tcp_t listen_fd;
-    BK_ASSERT(uv_tcp_init(&loop, &listen_fd));
-    BK_ASSERT(uv_tcp_bind(&listen_fd, listener->laddr, 0));
-    BK_ASSERT(uv_tcp_nodelay(&listen_fd, 1));
-    BK_ASSERT(uv_listen((uv_stream_t*)&listen_fd,
-                        listener->backlog_size,
+    uv_tcp_t listen_sock;
+    listen_sock.data = listener;
+    BK_ASSERT(uv_tcp_init(&loop, &listen_sock));
+    BK_ASSERT(uv_tcp_bind(&listen_sock, listener->_laddr, 0));
+    BK_ASSERT(uv_tcp_nodelay(&listen_sock, 1));
+    BK_ASSERT(uv_listen((uv_stream_t*)&listen_sock,
+                        listener->_backlog_size,
                         _bk_listener_listen_cb));
 
     char ip[16] = {0};
-    uv_ip4_name((const struct sockaddr_in*)listener->laddr, ip, sizeof(ip));
+    uv_ip4_name((const struct sockaddr_in*)listener->_laddr, ip, sizeof(ip));
     log_info("listener server now running on %s", ip);
 
     int err = uv_run(&loop, UV_RUN_DEFAULT);
@@ -114,7 +156,7 @@ bk_listener_run(void* listener_ptr) {
     // 1. stop accepting signals
     uv_close((uv_handle_t*)&sighandler, NULL);
     // 2. stop accepting connection
-    uv_close((uv_handle_t*)&listen_fd, NULL);
+    uv_close((uv_handle_t*)&listen_sock, NULL);
     // 3. wait for existing streams to end
     do {
         // TODO(cmc): timer / hard deadline

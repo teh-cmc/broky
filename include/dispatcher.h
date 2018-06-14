@@ -20,15 +20,22 @@
 
 // -----------------------------------------------------------------------------
 
-typedef struct bk_dispatcher_s {
-    uint32_t id;
+typedef struct uv_loop_s uv_loop_t;
 
-    const bk_worker_t* _workers;
+// _ denotes read-only members (from an external standpoint).
+typedef struct bk_dispatcher_s {
+    uint32_t _id;
+
+    uint32_t     _nb_workers;
+    bk_worker_t* _workers;
+
+    uv_loop_t* _loop;
 } bk_dispatcher_t;
 
-void bk_dispatcher_init(bk_dispatcher_t*   dispatcher,
-                        uint32_t           id,
-                        const bk_worker_t* workers);
+void bk_dispatcher_init(bk_dispatcher_t* dispatcher,
+                        uint32_t         id,
+                        uint32_t         nb_workers,
+                        bk_worker_t*     workers);
 void bk_dispatcher_fini(bk_dispatcher_t* dispatcher);
 
 void bk_dispatcher_run(void* dispatcher_ptr);

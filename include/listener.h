@@ -20,19 +20,24 @@
 
 // -----------------------------------------------------------------------------
 
-typedef struct sockaddr sockaddr_t;
+typedef struct sockaddr  sockaddr_t;
+typedef struct uv_loop_s uv_loop_t;
 
+// _ denotes read-only members (from an external standpoint).
 typedef struct bk_listener_s {
-    sockaddr_t* laddr;
-    uint32_t    backlog_size;
+    sockaddr_t* _laddr;
+    uint32_t    _backlog_size;
 
-    const bk_dispatcher_t* _dispatchers;
+    uint32_t         _nb_dispatchers;
+    bk_dispatcher_t* _dispatchers;
+    uint32_t         _cur_dispatcher;
 } bk_listener_t;
 
-void bk_listener_init(bk_listener_t*         listener,
-                      sockaddr_t*            laddr,
-                      const uint32_t         backlog_size,
-                      const bk_dispatcher_t* dispatchers);
+void bk_listener_init(bk_listener_t*   listener,
+                      sockaddr_t*      laddr,
+                      const uint32_t   backlog_size,
+                      const uint32_t   nb_dispatchers,
+                      bk_dispatcher_t* dispatchers);
 void bk_listener_fini(bk_listener_t* listener);
 
 void bk_listener_run(void* listener_ptr);
