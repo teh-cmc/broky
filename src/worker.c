@@ -13,11 +13,7 @@
 // limitations under the License.
 
 #include <assert.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "macros.h"
 #include "worker.h"
@@ -26,10 +22,9 @@
 
 // -----------------------------------------------------------------------------
 
-int
+void
 bk_worker_init(bk_worker_t* worker, uint32_t id) {
     worker->id = id;
-    return 0;
 }
 
 void
@@ -39,23 +34,22 @@ bk_worker_fini(bk_worker_t* worker) {
 
 // -----------------------------------------------------------------------------
 
-// NOTE(cmc): Always run as a thread.
-// TODO(cmc): remove assertions and forward errors to master
 void
-bk_worker_run(void* worker_raw) {
-    bk_worker_t* worker = worker_raw;
+bk_worker_run(void* worker_ptr) {
+    bk_worker_t* worker = worker_ptr;
+    (void)worker;
 
-    uv_loop_t loop;
-    BK_ASSERT(uv_loop_init(&loop));
+    /* uv_loop_t loop; */
+    /* BK_ASSERT(uv_loop_init(&loop)); */
 
-    int err = uv_run(&loop, UV_RUN_DEFAULT);
-    log_info("worker %d shutting down...", worker->id);
+    /* int err = uv_run(&loop, UV_RUN_DEFAULT); */
+    /* log_info("worker %d shutting down...", worker->id); */
 
-    // wait for existing streams to end
-    do {
-        err = uv_run(&loop, UV_RUN_DEFAULT);
-    } while (err);
-    log_info("worker %d shutdown complete");
+    /* // wait for existing streams to end */
+    /* do { */
+    /*     err = uv_run(&loop, UV_RUN_DEFAULT); */
+    /* } while (err); */
+    /* log_info("worker %d shutdown complete"); */
 
-    BK_LOGERR(uv_loop_close(&loop));
+    /* BK_LOGERR(uv_loop_close(&loop)); */
 }

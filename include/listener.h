@@ -16,13 +16,23 @@
 
 #include <stdint.h>
 
+#include "dispatcher.h"
+
 // -----------------------------------------------------------------------------
 
-typedef struct bk_worker_s {
-    uint32_t id;
-} bk_worker_t;
+typedef struct sockaddr sockaddr_t;
 
-void bk_worker_init(bk_worker_t* worker, uint32_t id);
-void bk_worker_fini(bk_worker_t* worker);
+typedef struct bk_listener_s {
+    sockaddr_t* laddr;
+    uint32_t    backlog_size;
 
-void bk_worker_run(void* worker_ptr);
+    const bk_dispatcher_t* _dispatchers;
+} bk_listener_t;
+
+void bk_listener_init(bk_listener_t*         listener,
+                      sockaddr_t*            laddr,
+                      const uint32_t         backlog_size,
+                      const bk_dispatcher_t* dispatchers);
+void bk_listener_fini(bk_listener_t* listener);
+
+void bk_listener_run(void* listener_ptr);

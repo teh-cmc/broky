@@ -6,7 +6,8 @@ project(Broky)
 
 set(PROJECT_SOURCES
     src/main.c
-    src/master.c
+    src/listener.c
+    src/dispatcher.c
     src/worker.c
     src/log.c
 )

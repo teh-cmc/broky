@@ -14,25 +14,18 @@
 
 #pragma once
 
-#include <netinet/in.h>
-#include <stdbool.h>
 #include <stdint.h>
-
-#include "worker.h"
-
-#include "libuv/include/uv.h"
 
 // -----------------------------------------------------------------------------
 
-typedef struct bk_master {
-    uint32_t     id;  // always -1 once initialized
-    uint32_t     nb_workers;
-    bk_worker_t* _workers;
-} bk_master_t;
+#define BK_MAX(T) \
+    static inline T bk_max_##T(T a, T b) { return a > b ? a : b; }
 
-int  bk_master_init(bk_master_t* master, const uint32_t nb_workers);
-void bk_master_fini(bk_master_t* master);
+BK_MAX(uint32_t)
 
-int bk_master_run(bk_master_t*           master,
-                  const struct sockaddr* laddr,
-                  const uint32_t         backlog_size);
+// clang-format off
+#define bk_max(a, b)                    \
+    _Generic((a),                       \
+        uint32_t: bk_max_uint32_t(a, b) \
+    )
+// clang-format on

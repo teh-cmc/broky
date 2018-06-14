@@ -16,13 +16,19 @@
 
 #include <stdint.h>
 
+#include "worker.h"
+
 // -----------------------------------------------------------------------------
 
-typedef struct bk_worker_s {
+typedef struct bk_dispatcher_s {
     uint32_t id;
-} bk_worker_t;
 
-void bk_worker_init(bk_worker_t* worker, uint32_t id);
-void bk_worker_fini(bk_worker_t* worker);
+    const bk_worker_t* _workers;
+} bk_dispatcher_t;
 
-void bk_worker_run(void* worker_ptr);
+void bk_dispatcher_init(bk_dispatcher_t*   dispatcher,
+                        uint32_t           id,
+                        const bk_worker_t* workers);
+void bk_dispatcher_fini(bk_dispatcher_t* dispatcher);
+
+void bk_dispatcher_run(void* dispatcher_ptr);
