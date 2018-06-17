@@ -1,0 +1,7 @@
+namespace bk.fbs;
+
+table Message {
+    contents: string;
+}
+
+root_type Message;

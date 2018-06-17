@@ -19,12 +19,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "dispatcher.h"
-#include "macros.h"
-#include "memory.h"
-#include "stream.h"
+#include "common/macros.h"
+#include "server/dispatcher.h"
+#include "server/memory.h"
+#include "server/stream.h"
 
-#include "libuv/include/uv.h"
+#include "libuv/uv.h"
 
 // -----------------------------------------------------------------------------
 

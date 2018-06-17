@@ -57,5 +57,6 @@ Mkfile.old
 dkms.conf
 
 build/
+builds/
 third_party/
 compile_commands.json

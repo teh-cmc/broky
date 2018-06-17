@@ -15,10 +15,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "macros.h"
-#include "worker.h"
+#include "common/macros.h"
+#include "server/worker.h"
 
-#include "libuv/include/uv.h"
+#include "libuv/uv.h"
 
 // -----------------------------------------------------------------------------
 

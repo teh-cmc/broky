@@ -12,19 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <assert.h>
-#include <stdint.h>
 #include <stdlib.h>
 
-#include "libuv/include/uv.h"
+#include "common/macros.h"
+
+#include "libuv/uv.h"
 
 // -----------------------------------------------------------------------------
 
 void
-bk_dumb_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-    (void)handle;
+bk_stream_write_cb(uv_write_t* req, int status) {
+    BK_LOGERR(status);
+    free(req);
+}
 
-    buf->base = calloc(4 * 1024, 1);
-    assert(buf->base);
-    buf->len = 4 * 1024;
+void
+bk_stream_close_cb(uv_handle_t* client) {
+    free(client);
 }

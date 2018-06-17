@@ -11,16 +11,15 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [Broky](#broky)
-  - [Ops model](#ops-model)
-  - [Data model](#data-model)
-  - [Node](#node)
-    - [Sharding model](#sharding-model)
-  - [Clustering](#clustering)
-    - [Sharding model](#sharding-model-1)
-  - [Replication model](#replication-model)
-  - [FAQ](#faq)
-    - [How does this differ from Apache Kafka?](#how-does-this-differ-from-apache-kafka)
+
+- [Data model](#data-model)
+- [API](#api)
+- [Single node](#single-node)
+  - [Sharding model](#sharding-model)
+- [Clustering](#clustering)
+  - [Sharding model](#sharding-model-1)
+- [Replication model](#replication-model)
+- [Ops model](#ops-model)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

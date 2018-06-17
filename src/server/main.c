@@ -18,14 +18,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dispatcher.h"
-#include "listener.h"
-#include "log.h"
-#include "macros.h"
-#include "math.h"
-#include "worker.h"
+#include "common/macros.h"
+#include "common/math.h"
+#include "server/dispatcher.h"
+#include "server/listener.h"
+#include "server/worker.h"
 
-#include "libuv/include/uv.h"
+#include "libuv/uv.h"
+#include "logc/log.h"
 
 // -----------------------------------------------------------------------------
 

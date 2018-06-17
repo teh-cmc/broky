@@ -19,14 +19,14 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "dispatcher.h"
-#include "listener.h"
-#include "log.h"
-#include "macros.h"
-#include "memory.h"
-#include "stream.h"
+#include "common/macros.h"
+#include "server/dispatcher.h"
+#include "server/listener.h"
+#include "server/memory.h"
+#include "server/stream.h"
 
-#include "libuv/include/uv.h"
+#include "libuv/uv.h"
+#include "logc/log.h"
 
 // -----------------------------------------------------------------------------
 

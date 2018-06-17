@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 
-#include "macros.h"
-
-#include "libuv/include/uv.h"
+#include "libuv/uv.h"
 
 // -----------------------------------------------------------------------------
 
 void
-bk_stream_write_cb(uv_write_t* req, int status) {
-    BK_LOGERR(status);
-    free(req);
-}
+bk_dumb_alloc_cb(uv_handle_t* handle, size_t hint, uv_buf_t* buf) {
+    (void)handle;
+    (void)hint;
 
-void
-bk_stream_close_cb(uv_handle_t* client) {
-    free(client);
+    // TODO(cmc): try with 1 byte and see that happens protocol-wise.
+    buf->base = calloc(4 * 1024, 1);
+    assert(buf->base);
+    buf->len = 4 * 1024;
 }

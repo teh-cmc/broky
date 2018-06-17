@@ -16,9 +16,9 @@
 
 #include <stdint.h>
 
-#include "worker.h"
+#include "server/worker.h"
 
-#include "libuv/include/uv.h"
+#include "libuv/uv.h"
 
 // -----------------------------------------------------------------------------
 
