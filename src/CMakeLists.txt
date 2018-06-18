@@ -1,3 +1,4 @@
+add_subdirectory(test_fbs)
 add_subdirectory(common)
 
 option(BROKY_BUILD_SERVER "build Broky server" ON)
