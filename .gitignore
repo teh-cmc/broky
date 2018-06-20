@@ -61,3 +61,4 @@ builds/
 third_party/
 compile_commands.json
 vgcore.*
+.gdb_history

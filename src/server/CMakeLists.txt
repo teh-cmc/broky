@@ -1,6 +1,6 @@
 compute_compile_commands()
 
-add_executable(broky_srv
+add_executable(broky_server
     main.c
     listener.c
     dispatcher.c
@@ -17,4 +17,4 @@ else()
     set(libs logc uv flatccrt_d pthread)
 endif()
 
-target_link_libraries(broky_srv ${libs})
+target_link_libraries(broky_server ${libs})

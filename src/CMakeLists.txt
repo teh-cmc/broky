@@ -1,13 +1,7 @@
-add_subdirectory(test_fbs)
 add_subdirectory(common)
+add_subdirectory(server)
+add_subdirectory(client)
 
-option(BROKY_BUILD_SERVER "build Broky server" ON)
-option(BROKY_BUILD_CLIENT "build Broky client" ON)
+add_subdirectory(server_test)
 
-if(BROKY_BUILD_SERVER)
-    add_subdirectory(server)
-endif()
-
-if(BROKY_BUILD_CLIENT)
-    add_subdirectory(client)
-endif()
+add_subdirectory(test_fbs)

@@ -2,10 +2,31 @@ cmake_minimum_required(VERSION 3.5)
 
 project(Broky LANGUAGES C VERSION 0.1.0)
 
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+   message(STATUS "CMAKE_INSTALL_PREFIX is not set, defaulting to '${CMAKE_BINARY_DIR}/install'")
+   set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE STRING "" FORCE)
+endif()
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+   message(STATUS "CMAKE_BUILD_TYPE is not set, defaulting to 'Debug'")
+   set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
+endif()
+
+## -----------------------------------------------------------------------------
+
+enable_testing()
+
+set(VALGRIND_FLAGS
+        --quiet
+        --leak-check=full
+        --show-leak-kinds=all
+        --track-origins=yes
+        --error-exitcode=1
+)
+
 ## -----------------------------------------------------------------------------
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-option(BROKY_COMPILE_COMMANDS ON)
 function(compute_compile_commands)
    add_custom_command(
         OUTPUT  ${CMAKE_CURRENT_LIST_DIR}/compile_commands.json
