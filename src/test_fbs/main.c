@@ -26,15 +26,15 @@
 
 int
 main() {
-    flatcc_builder_t builder, *B;
-    B = &builder;
+    flatcc_builder_t builder, *B = &builder;
+
     BK_ASSERT(flatcc_builder_init(B));
     flatcc_builder_init(B);
 
-    flatbuffers_string_ref_t contents =
+    flatbuffers_string_ref_t payload =
         flatbuffers_string_create_str(B, "coucou les loulous");
     BK_ASSERT(bk_fbs_Message_start_as_root(B));
-    bk_fbs_Message_contents_add(B, contents);
+    bk_fbs_Message_payload_add(B, payload);
     bk_fbs_Message_end_as_root(B);
 
     size_t size;
@@ -44,7 +44,7 @@ main() {
 
     bk_fbs_Message_table_t msg = bk_fbs_Message_as_root(buf);
 
-    flatbuffers_string_t name = bk_fbs_Message_contents(msg);
+    flatbuffers_string_t name = bk_fbs_Message_payload(msg);
     size_t               name_len = flatbuffers_string_len(name);
 
     printf("size=%lu: '%.*s'\n", name_len, (int)name_len, (char*)name);

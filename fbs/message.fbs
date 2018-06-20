@@ -1,7 +1,10 @@
 namespace bk.fbs;
 
 table Message {
-    contents: string;
+    key_partition: string;
+    key: string;
+
+    payload: string;
 }
 
 root_type Message;
