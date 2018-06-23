@@ -1,10 +1,18 @@
-compute_compile_commands()
+set(PARENT_PROJECT_NAME ${PROJECT_NAME})
 
-add_executable(test_fbs
-    main.c
+cmake_minimum_required(VERSION 3.5)
 
-    ${CMAKE_CURRENT_LIST_DIR}/compile_commands.json
+project(
+    ${PARENT_PROJECT_NAME}_testfbs
+    LANGUAGES C
+    VERSION ${${PARENT_PROJECT_NAME}_VERSION}
 )
+
+
+add_executable(${PROJECT_NAME}
+    main.c
+)
+add_dependencies(${PROJECT_NAME} compile_commands fbs_message)
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
     set(libs flatccrt pthread)
@@ -12,5 +20,4 @@ else()
     set(libs flatccrt_d pthread)
 endif()
 
-add_dependencies(test_fbs fbs_message)
-target_link_libraries(test_fbs ${libs})
+target_link_libraries(${PROJECT_NAME} ${libs})

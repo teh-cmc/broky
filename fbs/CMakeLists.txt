@@ -3,7 +3,11 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
     set(cmd ${PROJECT_EXTERNAL_DIR_BIN}/flatcc)
 endif()
 
-set(files ${CMAKE_CURRENT_LIST_DIR}/message.fbs)
+## NOTE(cmc): GLOB gets buggy for some reason.
+set(files
+    ${CMAKE_CURRENT_LIST_DIR}/message.fbs
+    ${CMAKE_CURRENT_LIST_DIR}/requests.fbs
+)
 foreach(filepath ${files})
     get_filename_component(filename ${filepath} NAME_WE)
     add_custom_target(fbs_${filename})
