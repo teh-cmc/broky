@@ -80,17 +80,17 @@ _bk_listener_handoff_client(bk_listener_t* listener, uv_tcp_t* client) {
 // TODO(cmc): no asserts
 static void
 _bk_listener_listen_cb(uv_stream_t* server, int err) {
-    BK_ASSERT(err);  // TODO(cmc)
+    BK_UV_ASSERT(err);  // TODO(cmc)
 
     uv_tcp_t* client = (uv_tcp_t*)calloc(sizeof(*client), 1);
     assert(client);
-    BK_ASSERT(uv_tcp_init(server->loop, client));
-    BK_ASSERT(uv_tcp_nodelay(client, 1));
+    BK_UV_ASSERT(uv_tcp_init(server->loop, client));
+    BK_UV_ASSERT(uv_tcp_nodelay(client, 1));
 
     if (uv_accept(server, (uv_stream_t*)client) == 0) {
         log_info("accepted new client!");
 
-        BK_ASSERT(_bk_listener_handoff_client(server->data, client));
+        BK_UV_ASSERT(_bk_listener_handoff_client(server->data, client));
 
         uv_close((uv_handle_t*)client, bk_stream_close_cb);
     }
@@ -105,19 +105,19 @@ bk_listener_run(void* listener_ptr) {
     assert(listener);
 
     uv_loop_t loop;
-    BK_ASSERT(uv_loop_init(&loop));
+    BK_UV_ASSERT(uv_loop_init(&loop));
 
     uv_signal_t sighandler;
-    BK_ASSERT(uv_signal_init(&loop, &sighandler));
-    BK_ASSERT(
+    BK_UV_ASSERT(uv_signal_init(&loop, &sighandler));
+    BK_UV_ASSERT(
         uv_signal_start_oneshot(&sighandler, _bk_listener_signal_cb, SIGINT));
 
     uv_tcp_t listen_sock;
     listen_sock.data = listener;
-    BK_ASSERT(uv_tcp_init(&loop, &listen_sock));
-    BK_ASSERT(uv_tcp_bind(&listen_sock, listener->_laddr, 0));
-    BK_ASSERT(uv_tcp_nodelay(&listen_sock, 1));
-    BK_ASSERT(uv_listen((uv_stream_t*)&listen_sock,
+    BK_UV_ASSERT(uv_tcp_init(&loop, &listen_sock));
+    BK_UV_ASSERT(uv_tcp_bind(&listen_sock, listener->_laddr, 0));
+    BK_UV_ASSERT(uv_tcp_nodelay(&listen_sock, 1));
+    BK_UV_ASSERT(uv_listen((uv_stream_t*)&listen_sock,
                         listener->_backlog_size,
                         _bk_listener_listen_cb));
 
@@ -138,7 +138,7 @@ bk_listener_run(void* listener_ptr) {
         err = uv_run(&loop, UV_RUN_DEFAULT);
     } while (err);
 
-    BK_LOGERR(uv_loop_close(&loop));
+    BK_UV_LOGERR(uv_loop_close(&loop));
     log_info("listener server shutdown complete");
 
     for (uint32_t i = 0; i < listener->_nb_dispatchers; i++) {

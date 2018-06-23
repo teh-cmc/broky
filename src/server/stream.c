@@ -22,7 +22,7 @@
 
 void
 bk_stream_write_cb(uv_write_t* req, int status) {
-    BK_LOGERR(status);
+    BK_UV_LOGERR(status);
     free(req);
 }
 

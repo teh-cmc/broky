@@ -76,14 +76,14 @@ _bk_dispatcher_read_cb(uv_stream_t*    stream,
         free(buf->base);
         uv_close((uv_handle_t*)stream, bk_stream_close_cb);
         if (nread == UV_EOF) return;
-        BK_LOGERR(nread);
+        BK_UV_LOGERR(nread);
     }
 
     assert(buf->base);
     assert(buf->len);
 
     bk_dispatcher_t* dispatcher = stream->data;
-    BK_ASSERT(_bk_dispatcher_announce(dispatcher, stream, buf->base, buf->len));
+    BK_UV_ASSERT(_bk_dispatcher_announce(dispatcher, stream, buf->base, buf->len));
     free(buf->base);
 }
 
@@ -95,11 +95,11 @@ bk_dispatcher_run(void* dispatcher_ptr) {
     bk_dispatcher_t* dispatcher = dispatcher_ptr;
 
     uv_loop_t loop;
-    BK_ASSERT(uv_loop_init(&loop));
+    BK_UV_ASSERT(uv_loop_init(&loop));
 
     uv_timer_t timer;
-    BK_ASSERT(uv_timer_init(&loop, &timer));
-    BK_ASSERT(uv_timer_start(&timer, _bk_dispatcher_timer_cb, 1000, 1000));
+    BK_UV_ASSERT(uv_timer_init(&loop, &timer));
+    BK_UV_ASSERT(uv_timer_start(&timer, _bk_dispatcher_timer_cb, 1000, 1000));
     dispatcher->_keep_alive = &timer;
 
     dispatcher->_loop = &loop;
@@ -114,7 +114,7 @@ bk_dispatcher_run(void* dispatcher_ptr) {
 
     log_info("dispatcher %u shutdown complete", dispatcher->_id);
 
-    BK_LOGERR(uv_loop_close(&loop));
+    BK_UV_LOGERR(uv_loop_close(&loop));
 }
 
 int
@@ -152,6 +152,6 @@ void
 bk_dispatcher_stop(bk_dispatcher_t* dispatcher) {
     uv_async_t* async = calloc(sizeof(*async), 1);
     async->data = dispatcher;
-    BK_ASSERT(uv_async_init(dispatcher->_loop, async, _bk_dispatcher_stop_cb));
-    BK_ASSERT(uv_async_send(async));
+    BK_UV_ASSERT(uv_async_init(dispatcher->_loop, async, _bk_dispatcher_stop_cb));
+    BK_UV_ASSERT(uv_async_send(async));
 }

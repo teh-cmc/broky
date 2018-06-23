@@ -16,12 +16,17 @@
 
 #include "logc/log.h"
 
+#include "libuv/uv.h"
+
 // -----------------------------------------------------------------------------
 
-// TODO(cmc): likely/unlikely
+#define LIKELY(x) __builtin_expect((x), 1)
+#define UNLIKELY(x) __builtin_expect((x), 0)
 
-#define BK_ASSERT(uvexpr)                 \
-    if (uvexpr < 0) {                      \
+// -----------------------------------------------------------------------------
+
+#define BK_UV_ASSERT(uvexpr)               \
+    if (UNLIKELY(uvexpr < 0)) {            \
         fprintf(stderr,                    \
                 "%s:%d error: %s\n\t%s\n", \
                 __FILE__,                  \
@@ -31,15 +36,17 @@
         abort();                           \
     }
 
-#define BK_LOGERR(uvexpr)              \
-    if (uvexpr < 0) {                   \
+#define BK_UV_LOGERR(uvexpr)            \
+    if (UNLIKELY(uvexpr < 0)) {         \
         log_error(uv_strerror(uvexpr)); \
     }
 
-#define BK_RETERR(expr) \
-    do {                 \
-        int err = expr;  \
-        if (err < 0) {   \
-            return err;  \
-        }                \
+// -----------------------------------------------------------------------------
+
+#define BK_RETERR(expr)          \
+    do {                         \
+        int ret = expr;          \
+        if (UNLIKELY(ret < 0)) { \
+            return ret;          \
+        }                        \
     } while (0);

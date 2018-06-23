@@ -40,7 +40,7 @@ bk_worker_run(void* worker_ptr) {
     (void)worker;
 
     /* uv_loop_t loop; */
-    /* BK_ASSERT(uv_loop_init(&loop)); */
+    /* BK_UV_ASSERT(uv_loop_init(&loop)); */
 
     /* int err = uv_run(&loop, UV_RUN_DEFAULT); */
     /* log_info("worker %d shutting down...", worker->id); */
@@ -51,5 +51,5 @@ bk_worker_run(void* worker_ptr) {
     /* } while (err); */
     /* log_info("worker %d shutdown complete"); */
 
-    /* BK_LOGERR(uv_loop_close(&loop)); */
+    /* BK_UV_LOGERR(uv_loop_close(&loop)); */
 }

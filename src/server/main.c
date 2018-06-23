@@ -61,7 +61,7 @@ main() {
         for (uint32_t i = 0; i < nb_workers; i++) {
             bk_worker_t* worker = workers + i;
             bk_worker_init(worker, i + 1);
-            BK_ASSERT(uv_thread_create(
+            BK_UV_ASSERT(uv_thread_create(
                 worker_tids + i, bk_worker_run, (void*)worker));
         }
     }
@@ -78,7 +78,7 @@ main() {
         for (uint32_t i = 0; i < nb_dispatchers; i++) {
             bk_dispatcher_t* dispatcher = dispatchers + i;
             bk_dispatcher_init(dispatcher, i + 1, nb_workers, workers);
-            BK_ASSERT(uv_thread_create(
+            BK_UV_ASSERT(uv_thread_create(
                 dispatcher_tids + i, bk_dispatcher_run, (void*)dispatcher));
         }
     }
@@ -94,21 +94,21 @@ main() {
         struct sockaddr_in* laddr = calloc(sizeof(*laddr), 1);
         assert(laddr);
         // TODO(cmc): argv
-        BK_ASSERT(uv_ip4_addr("0.0.0.0", 7070, laddr));
+        BK_UV_ASSERT(uv_ip4_addr("0.0.0.0", 7070, laddr));
 
         listener = calloc(sizeof(*listener), 1);
         assert(listener);
         bk_listener_init(
             listener, (sockaddr_t*)laddr, 42, nb_dispatchers, dispatchers);
 
-        BK_ASSERT(
+        BK_UV_ASSERT(
             uv_thread_create(&listener_tid, bk_listener_run, (void*)listener));
     }
 
     { /* join listener thread & clean-up resources */
         log_info("cleaning up listener");
 
-        BK_LOGERR(uv_thread_join(&listener_tid));
+        BK_UV_LOGERR(uv_thread_join(&listener_tid));
         bk_listener_fini(listener);
 
         free(listener);
@@ -119,7 +119,7 @@ main() {
 
         for (uint32_t i = 0; i < nb_dispatchers; i++) {
             bk_dispatcher_t* dispatcher = dispatchers + i;
-            BK_LOGERR(uv_thread_join(dispatcher_tids + i));
+            BK_UV_LOGERR(uv_thread_join(dispatcher_tids + i));
             bk_dispatcher_fini(dispatcher);
         }
 
@@ -131,7 +131,7 @@ main() {
 
         for (uint32_t i = 0; i < nb_workers; i++) {
             bk_worker_t* worker = workers + i;
-            BK_LOGERR(uv_thread_join(worker_tids + i));
+            BK_UV_LOGERR(uv_thread_join(worker_tids + i));
             bk_worker_fini(worker);
         }
 

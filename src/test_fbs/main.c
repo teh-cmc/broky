@@ -18,7 +18,7 @@
 
 // -----------------------------------------------------------------------------
 //
-#define BK_ASSERT(uvexpr)                                                    \
+#define BK_UV_ASSERT(uvexpr)                                                    \
     if (uvexpr < 0) {                                                        \
         fprintf(stderr, "%s:%d error: %s\n\n", __FILE__, __LINE__, #uvexpr); \
         abort();                                                             \
@@ -28,11 +28,11 @@ int
 main() {
     flatcc_builder_t builder, *B = &builder;
 
-    BK_ASSERT(flatcc_builder_init(B));
+    BK_UV_ASSERT(flatcc_builder_init(B));
 
     flatbuffers_string_ref_t payload =
         flatbuffers_string_create_str(B, "coucou les loulous");
-    BK_ASSERT(bk_fbs_Message_start_as_root(B));
+    BK_UV_ASSERT(bk_fbs_Message_start_as_root(B));
     bk_fbs_Message_payload_add(B, payload);
     bk_fbs_Message_end_as_root(B);
 
