@@ -1,0 +1,12 @@
+namespace bk.fbs;
+
+union Req { Ping }
+
+table Ping {
+}
+
+table Request {
+    req: Req;
+}
+
+root_type Request;

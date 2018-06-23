@@ -29,7 +29,6 @@ main() {
     flatcc_builder_t builder, *B = &builder;
 
     BK_ASSERT(flatcc_builder_init(B));
-    flatcc_builder_init(B);
 
     flatbuffers_string_ref_t payload =
         flatbuffers_string_create_str(B, "coucou les loulous");
