@@ -12,34 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdio.h>
+#include <assert.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-#include "common/macros.h"
-#include "fbs/requests_builder.h"
-
-#include "flatcc/support/hexdump.h"
+#include "libuv/uv.h"
 
 // -----------------------------------------------------------------------------
 
-int
-bk_proto_new_req_ping(flatcc_builder_t* B, void** dst) {
-    bk_fbs_Ping_ref_t ping = bk_fbs_Ping_create(B);
-    assert(ping != 0);
-    bk_fbs_Req_union_ref_t req = bk_fbs_Req_as_Ping(ping);
+void
+bk_dumb_alloc_cb(uv_handle_t* handle, size_t hint, uv_buf_t* buf) {
+    (void)handle;
+    (void)hint;
 
-    BK_RETERR(!bk_fbs_Request_start_as_root(B));
-    BK_RETERR(!bk_fbs_Request_req_add(B, req));
-    BK_RETERR(!bk_fbs_Request_end_as_root(B));
-
-    size_t size;
-    void*  buf = flatcc_builder_finalize_aligned_buffer(B, &size);
-    assert(buf);
-
-#ifdef DEBUG
-    hexdump("Request<Ping>", buf, size, stderr);
-#endif
-
-    *dst = buf;
-
-    return 0;
+    // TODO(cmc): try with 1 byte and see that happens protocol-wise.
+    buf->base = calloc(4 * 1024, 1);
+    assert(buf->base);
+    buf->len = 4 * 1024;
 }

@@ -12,34 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "client/memory.h"
+#include "client/tty.h"
 #include "common/macros.h"
-#include "fbs/requests_builder.h"
 
-#include "flatcc/support/hexdump.h"
+#include "libuv/uv.h"
+#include "logc/log.h"
 
 // -----------------------------------------------------------------------------
 
 int
-bk_proto_new_req_ping(flatcc_builder_t* B, void** dst) {
-    bk_fbs_Ping_ref_t ping = bk_fbs_Ping_create(B);
-    assert(ping != 0);
-    bk_fbs_Req_union_ref_t req = bk_fbs_Req_as_Ping(ping);
+main() {
+    uv_loop_t loop;
+    BK_UV_ASSERT(uv_loop_init(&loop));
 
-    BK_RETERR(!bk_fbs_Request_start_as_root(B));
-    BK_RETERR(!bk_fbs_Request_req_add(B, req));
-    BK_RETERR(!bk_fbs_Request_end_as_root(B));
+    bk_tty_t tty;
+    BK_UV_ASSERT(bk_tty_init(&tty, &loop));
 
-    size_t size;
-    void*  buf = flatcc_builder_finalize_aligned_buffer(B, &size);
-    assert(buf);
+    int err = uv_run(&loop, UV_RUN_DEFAULT);
+    do {  // wait for existing streams to end
+        err = uv_run(&loop, UV_RUN_DEFAULT);
+        BK_UV_LOGERR(err)
+    } while (err);
 
-#ifdef DEBUG
-    hexdump("Request<Ping>", buf, size, stderr);
-#endif
+    BK_UV_LOGERR(uv_loop_close(&loop));
+    BK_UV_LOGERR(uv_tty_reset_mode());
 
-    *dst = buf;
-
-    return 0;
+    bk_tty_fini(&tty);
 }

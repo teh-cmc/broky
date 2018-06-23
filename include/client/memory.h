@@ -12,34 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdio.h>
+#pragma once
 
-#include "common/macros.h"
-#include "fbs/requests_builder.h"
+#include <stdint.h>
 
-#include "flatcc/support/hexdump.h"
+#include "libuv/uv.h"
 
 // -----------------------------------------------------------------------------
 
-int
-bk_proto_new_req_ping(flatcc_builder_t* B, void** dst) {
-    bk_fbs_Ping_ref_t ping = bk_fbs_Ping_create(B);
-    assert(ping != 0);
-    bk_fbs_Req_union_ref_t req = bk_fbs_Req_as_Ping(ping);
-
-    BK_RETERR(!bk_fbs_Request_start_as_root(B));
-    BK_RETERR(!bk_fbs_Request_req_add(B, req));
-    BK_RETERR(!bk_fbs_Request_end_as_root(B));
-
-    size_t size;
-    void*  buf = flatcc_builder_finalize_aligned_buffer(B, &size);
-    assert(buf);
-
-#ifdef DEBUG
-    hexdump("Request<Ping>", buf, size, stderr);
-#endif
-
-    *dst = buf;
-
-    return 0;
-}
+void bk_dumb_alloc_cb(uv_handle_t* handle,
+                      size_t       suggested_size,
+                      uv_buf_t*    buf);

@@ -83,7 +83,8 @@ _bk_dispatcher_read_cb(uv_stream_t*    stream,
     assert(buf->len);
 
     bk_dispatcher_t* dispatcher = stream->data;
-    BK_UV_ASSERT(_bk_dispatcher_announce(dispatcher, stream, buf->base, buf->len));
+    BK_UV_ASSERT(
+        _bk_dispatcher_announce(dispatcher, stream, buf->base, buf->len));
     free(buf->base);
 }
 
@@ -152,6 +153,7 @@ void
 bk_dispatcher_stop(bk_dispatcher_t* dispatcher) {
     uv_async_t* async = calloc(sizeof(*async), 1);
     async->data = dispatcher;
-    BK_UV_ASSERT(uv_async_init(dispatcher->_loop, async, _bk_dispatcher_stop_cb));
+    BK_UV_ASSERT(
+        uv_async_init(dispatcher->_loop, async, _bk_dispatcher_stop_cb));
     BK_UV_ASSERT(uv_async_send(async));
 }
